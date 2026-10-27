@@ -1,0 +1,88 @@
+﻿@echo off
+chcp 65001 > nul
+
+:: Задаем имя файла отчета
+set "REPORT=report.txt"
+
+:: Очищаем старый отчет, если он был
+del /f /q "%REPORT%" 2>nul
+
+echo ===================================================
+echo               ДИАГНОСТИКА КОМПЬЮТЕРА
+echo ===================================================
+
+echo =================================================== > "%REPORT%"
+echo               ДИАГНОСТИКА КОМПЬЮТЕРА >> "%REPORT%"
+echo =================================================== >> "%REPORT%"
+
+:: 1. ОПЕРАЦИОННАЯ СИСТЕМА
+echo [1] Операционная система:
+echo [1] Операционная система: >> "%REPORT%"
+for /f "tokens=3-9" %%a in ('systeminfo ^| findstr /C:"Название ОС" /C:"OS Name"') do (
+    echo Имя ОС: %%a %%b %%c %%d %%e %%f %%g
+    echo Имя ОС: %%a %%b %%c %%d %%e %%f %%g >> "%REPORT%"
+)
+for /f "tokens=3-4" %%a in ('systeminfo ^| findstr /C:"Тип системы" /C:"System Type"') do (
+    echo Архитектура: %%a %%b
+    echo Архитектура: %%a %%b >> "%REPORT%"
+)
+echo.
+echo. >> "%REPORT%"
+
+:: 2. ПРОЦЕССОР
+echo [2] Процессор:
+echo [2] Процессор: >> "%REPORT%"
+echo %PROCESSOR_IDENTIFIER%
+echo %PROCESSOR_IDENTIFIER% >> "%REPORT%"
+echo.
+echo. >> "%REPORT%"
+
+:: 3. ОПЕРАТИВНАЯ ПАМЯТЬ
+echo [3] Оперативная память:
+echo [3] Оперативная память: >> "%REPORT%"
+for /f "tokens=4" %%a in ('systeminfo ^| findstr /C:"Полный объем физической памяти" /C:"Total Physical Memory"') do (
+    echo Объем RAM: %%a МБ
+    echo Объем RAM: %%a МБ >> "%REPORT%"
+)
+echo.
+echo. >> "%REPORT%"
+
+:: 4. СВОБОДНОЕ МЕСТО НА ДИСКЕ
+echo [4] Свободное место на диске C:
+echo [4] Свободное место на диске C: >> "%REPORT%"
+for /f "tokens=3" %%a in ('dir C:\ ^| findstr /C:"свободно" /C:"bytes free"') do (
+    echo Свободно на C: %%a байт
+    echo Свободно на C: %%a байт >> "%REPORT%"
+)
+echo.
+echo. >> "%REPORT%"
+
+:: 5. СПИСОК УСТАНОВЛЕННЫХ ПРОГРАММ
+echo [5] Список установленных программ...
+echo [5] Список установленных программ: >> "%REPORT%"
+echo --------------------------------------------------- >> "%REPORT%"
+
+:: Собираем программы из реестра (быстрый способ без wmic)
+set "KEY=HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall"
+for /f "tokens=2*" %%a in ('reg query "%KEY%" /s /v DisplayName 2^>nul ^| findstr /H /C:"DisplayName"') do (
+    if not "%%b"=="" (
+        echo %%b
+        echo %%b >> "%REPORT%"
+    )
+)
+
+set "KEY32=HKLM\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+for /f "tokens=2*" %%a in ('reg query "%KEY32%" /s /v DisplayName 2^>nul ^| findstr /H /C:"DisplayName"') do (
+    if not "%%b"=="" (
+        echo %%b
+        echo %%b >> "%REPORT%"
+    )
+)
+
+echo.
+echo ===================================================
+echo Диагностика успешно завершена! 
+echo Отчет сохранен в файл %REPORT%
+echo ===================================================
+
+pause
